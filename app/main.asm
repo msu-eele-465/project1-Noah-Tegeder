@@ -84,20 +84,46 @@ SetupP6     bic.b   #BIT6,&P1OUT            ; Clear P6.6 output
             bis.b   #BIT6,&P6DIR            ; P6.6 output
 
             bic.w   #LOCKLPM5,&PM5CTL0      ; Unlock I/O pins
-            
 
-Mainloop    xor.b   #BIT0,&P1OUT            ; Toggle P1.0 every 0.1s
-Wait1       mov.w   #5,R14                  ; Outer delay to R14
-Wait2       mov.w   #50000,R15              ; Inner delay to R15
+SetupTimer  bis.w   #TBCLR, &TB0CTL         ; Clear timers and dividers
+            bis.w   #TBSSEL__ACLK, &TB0CTL  ; ACLK as Timer source
+            bis.w   #MC__UP, &TB0CTL        ; Up counting mode
+            
+            mov.w   #32880, &TB0CCR0        ; initialize CCR0
+            bis.w   #CCIE, &TB0CCTL0         ; Enable capture/compare Interrupt
+            bis.w   #CCIFG, &TB0CCTL0        ; Clear interrupt flag
+            
+            NOP
+            bis.w   #GIE, SR                ; Enable maskable interrupts
+            NOP
+
+Mainloop
+Flash       xor.b   #BIT0,&P1OUT            ; Toggle P1.0 every .5 seconds
+Delay1      mov.w   #6,R14                  ; Outer delay to R14
+Delay2      mov.w   #58500,R15              ; Inner delay to R15
 L2          dec.w   R15                     ; Decrement R15
             jnz     L2                      ; Inner delay over?
 L1          dec.w   R14                     ; Decrement R14
-            jnz     Wait2                   ; Outer delay over?
+            jnz     Delay2                   ; Outer delay over?
             jmp     Mainloop                ; Again
             NOP
+
+
+;------------------------------------------------------------------------------
+;           Interrupt Vectors
+;------------------------------------------------------------------------------
+ISR_TB0_CCR0:
+            xor.b   #BIT6,&P6OUT            ; Toggle P6.6
+            bic.w   #CCIFG, &TB0CCTL0         ; Clear interrupt flag
+            reti
+
+
 ;------------------------------------------------------------------------------
 ;           Interrupt Vectors
 ;------------------------------------------------------------------------------
             .sect   RESET_VECTOR            ; MSP430 RESET Vector
             .short  RESET                   ;
+
+            .sect   ".int43"
+            .short  ISR_TB0_CCR0
             .end
