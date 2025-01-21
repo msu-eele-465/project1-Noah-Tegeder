@@ -89,7 +89,7 @@ SetupTimer  bis.w   #TBCLR, &TB0CTL         ; Clear timers and dividers
             bis.w   #TBSSEL__ACLK, &TB0CTL  ; ACLK as Timer source
             bis.w   #MC__UP, &TB0CTL        ; Up counting mode
             
-            mov.w   #32880, &TB0CCR0        ; initialize CCR0
+            mov.w   #32800, &TB0CCR0        ; initialize CCR0
             bis.w   #CCIE, &TB0CCTL0         ; Enable capture/compare Interrupt
             bis.w   #CCIFG, &TB0CCTL0        ; Clear interrupt flag
             
